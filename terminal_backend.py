@@ -1,5 +1,5 @@
 # File: terminal_backend.py
-# Description: Universal Admin Panel (Unlimited Storage Boxes Added)
+# Description: Universal Admin Panel (Unlimited Engines + Storage)
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
@@ -9,14 +9,21 @@ import os
 # --- MODULE AUTO-LOADER ---
 modules = {}
 
-# 1. Storage Manager (NEW)
+# 1. Engine Manager (NEW)
+try:
+    import engine_manager
+    modules['engine'] = engine_manager.EngineRegistry()
+except ImportError:
+    modules['engine'] = None
+
+# 2. Storage Manager
 try:
     import storage_manager
     modules['storage'] = storage_manager.StorageRegistry()
 except ImportError:
     modules['storage'] = None
 
-# 2. Meta (FB/Insta/WA)
+# 3. Meta (FB/Insta/WA)
 try:
     import facebook_manager
     modules['fb'] = facebook_manager.FacebookBot()
@@ -27,16 +34,12 @@ try:
 except ImportError:
     pass
 
-# 3. Other Tools
+# 4. Other Tools (Cloud, TG, etc.)
 try:
     import cloudflare_manager
     modules['cloud'] = cloudflare_manager.CloudflareTunnel()
-    import dns_manager
-    modules['dns'] = dns_manager.DNSController()
     import telegram_manager
     modules['tg'] = telegram_manager.TelegramBot()
-    import git_ops
-    modules['git'] = git_ops.GitManager()
 except ImportError:
     pass
 
@@ -58,49 +61,58 @@ def handle_command(raw_command):
     parts = raw_command.split()
     cmd_start = parts[0].lower()
 
-    # --- 1. STORAGE COMMANDS (Unlimited Boxes) ---
-    if cmd_start == "storage":
-        if not modules['storage']:
-            emit('terminal_output', {'output': "❌ Error: 'storage_manager.py' missing."})
+    # --- 1. ENGINE COMMANDS (Start/Stop/Add) ---
+    if cmd_start == "engine":
+        if not modules['engine']:
+            emit('terminal_output', {'output': "❌ Error: 'engine_manager.py' missing."})
             return
 
-        # Command: storage add <Name> <Provider> <URL/API>
-        # Example: storage add MyDrive Google https://api.google.com/xyz
+        # engine add <Name> <Type> <Path>
         if parts[1] == "add":
             if len(parts) < 5:
-                emit('terminal_output', {'output': "Usage: storage add <UniqueName> <Provider> <API_Key_or_URL>"})
+                emit('terminal_output', {'output': "Usage: engine add <Name> <Type> <Path/Key>"})
             else:
                 name = parts[2]
-                provider = parts[3]
-                cred = " ".join(parts[4:]) # URL/Key me spaces ho sakte hain
-                emit('terminal_output', {'output': modules['storage'].add_storage(name, provider, cred)})
+                etype = parts[3]
+                path = " ".join(parts[4:])
+                emit('terminal_output', {'output': modules['engine'].add_engine(name, etype, path)})
             return
 
-        # Command: storage list
+        # engine start <Name>
+        if parts[1] == "start" or parts[1] == "on":
+            emit('terminal_output', {'output': modules['engine'].start_engine(parts[2])})
+            return
+
+        # engine stop <Name>
+        if parts[1] == "stop" or parts[1] == "off":
+            emit('terminal_output', {'output': modules['engine'].stop_engine(parts[2])})
+            return
+
+        # engine list
         if parts[1] == "list":
+            emit('terminal_output', {'output': modules['engine'].list_engines()})
+            return
+
+        # engine remove <Name>
+        if parts[1] == "remove":
+            emit('terminal_output', {'output': modules['engine'].remove_engine(parts[2])})
+            return
+
+    # --- 2. STORAGE COMMANDS ---
+    if cmd_start == "storage" and modules.get('storage'):
+        if parts[1] == "add":
+            emit('terminal_output', {'output': modules['storage'].add_storage(parts[2], parts[3], " ".join(parts[4:]))})
+        elif parts[1] == "list":
             emit('terminal_output', {'output': modules['storage'].list_storage()})
-            return
+        return
 
-        # Command: storage remove <Name>
-        if parts[1] == "remove" or parts[1] == "delete":
-            emit('terminal_output', {'output': modules['storage'].remove_storage(parts[2])})
-            return
-
-    # --- 2. META COMMANDS ---
+    # --- 3. META & SYSTEM COMMANDS ---
     if cmd_start == "fb" and modules.get('fb'):
         if parts[1] == "post": emit('terminal_output', {'output': modules['fb'].post_status(" ".join(parts[2:]))})
         return
-    if cmd_start == "wa" and modules.get('wa'):
-        if parts[1] == "send": emit('terminal_output', {'output': modules['wa'].send_msg(parts[2], " ".join(parts[3:]))})
-        return
-
-    # --- 3. SYSTEM COMMANDS ---
+        
     if cmd_start == "cloud" and modules.get('cloud'):
         if parts[1] == "public": emit('terminal_output', {'output': modules['cloud'].start_tunnel()})
-        return
-
-    if cmd_start == "telegram" and modules.get('tg'):
-        if parts[1] == "send": emit('terminal_output', {'output': modules['tg'].send_message(" ".join(parts[2:]))})
         return
 
     # Fallback Shell
@@ -112,6 +124,6 @@ def handle_command(raw_command):
         emit('terminal_output', {'output': str(e)})
 
 if __name__ == '__main__':
-    print("--- 🚀 AI Admin Panel: Unlimited Storage System Active ---")
+    print("--- 🚀 AI Admin Panel: Unlimited Engine & Storage Box Active ---")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     
