@@ -1,0 +1,20 @@
+{
+    "system-monitor": {
+        "name": "System Health Monitor",
+        "version": "1.0",
+        "description": "Checks CPU and RAM usage instantly.",
+        "code": "import psutil; print(f'CPU: {psutil.cpu_percent()}% | RAM: {psutil.virtual_memory().percent}%')"
+    },
+    "network-check": {
+        "name": "Internet Connectivity Test",
+        "version": "1.1",
+        "description": "Pings Google to check if internet is alive.",
+        "code": "import os; response = os.system('ping -c 1 google.com'); print('Online' if response == 0 else 'Offline')"
+    },
+    "security-lock": {
+        "name": "Emergency Lockdown",
+        "version": "2.0",
+        "description": "Creates a lock file to freeze system operations.",
+        "code": "open('LOCKDOWN.mode', 'w').write('LOCKED'); print('SYSTEM LOCKED UNDER EMERGENCY PROTOCOL')"
+    }
+}
