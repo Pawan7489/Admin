@@ -1,5 +1,5 @@
 # File: terminal_backend.py
-# Description: Universal Admin Panel (All Modules + Kaggle Integrated)
+# Description: Universal Admin Panel (WP + Blogger + All Previous Modules)
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
@@ -7,55 +7,66 @@ import subprocess
 import os
 import platform
 
-# --- MODULE AUTO-LOADER (Plug & Play) ---
+# --- MODULE AUTO-LOADER ---
+# Hum check karenge ki files maujood hain ya nahi
 
-# 1. Kaggle Module (NEW)
+modules = {}
+
+# 1. WordPress
+try:
+    import wordpress_manager
+    modules['wp'] = wordpress_manager.WordPressBot()
+except ImportError:
+    modules['wp'] = None
+
+# 2. Blogger
+try:
+    import blogger_manager
+    modules['blogger'] = blogger_manager.BloggerBot()
+except ImportError:
+    modules['blogger'] = None
+
+# 3. Kaggle
 try:
     import kaggle_manager
-    kaggle_available = True
-    kaggle_bot = kaggle_manager.KaggleBot()
+    modules['kaggle'] = kaggle_manager.KaggleBot()
 except ImportError:
-    kaggle_available = False
-    print("⚠️ Warning: 'kaggle_manager.py' missing or 'kaggle' library not installed.")
+    modules['kaggle'] = None
 
-# 2. Git Module
+# 4. Git
 try:
     import git_ops
-    git_available = True
-    git_brain = git_ops.GitManager()
+    modules['git'] = git_ops.GitManager()
 except ImportError:
-    git_available = False
+    modules['git'] = None
 
-# 3. Hugging Face Module
+# 5. Hugging Face
 try:
     import huggingface_manager
-    hf_available = True
-    hf_brain = huggingface_manager.ModelManager()
+    modules['hf'] = huggingface_manager.ModelManager()
 except ImportError:
-    hf_available = False
+    modules['hf'] = None
 
-# 4. System Health
+# 6. System Health
 try:
     import system_health
-    health_available = True
-    sys_doc = system_health.SystemDoctor()
+    modules['health'] = system_health.SystemDoctor()
 except ImportError:
-    health_available = False
+    modules['health'] = None
 
-# 5. Google Colab Bridge
+# 7. Colab Bridge
 try:
     import colab_bridge
-    colab_available = True
-    colab_link = colab_bridge.ColabConnector()
+    modules['colab'] = colab_bridge.ColabConnector()
 except ImportError:
-    colab_available = False
+    modules['colab'] = None
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'admin_secret_key_2026'
 socketio = SocketIO(app)
 
 current_dir = os.getcwd()
-os_type = platform.system()
 
 @app.route('/')
 def index():
@@ -67,65 +78,78 @@ def handle_command(raw_command):
     raw_command = raw_command.strip()
     if not raw_command: return
 
-    # --- 1. KAGGLE COMMANDS (NEW) ---
-    if raw_command.startswith("kaggle "):
-        if not kaggle_available:
-            emit('terminal_output', {'output': "❌ Error: Kaggle module missing. Install library: 'pip install kaggle'"})
-            return
+    parts = raw_command.split()
+    cmd_start = parts[0].lower()
 
-        parts = raw_command.split()
+    # --- 1. WORDPRESS COMMANDS ---
+    if cmd_start == "wp":
+        if not modules['wp']:
+            emit('terminal_output', {'output': "❌ Error: WordPress module missing."})
+            return
         
-        # Command: kaggle setup <username> <key>
+        # wp setup <url> <user> <pass>
+        if parts[1] == "setup" and len(parts) == 5:
+            emit('terminal_output', {'output': modules['wp'].setup(parts[2], parts[3], parts[4])})
+            return
+        
+        # wp post <title> <content>
+        if parts[1] == "post":
+            # Simple content parsing (Title needs quotes logic in future, simple split for now)
+            # Usage: wp post MyTitle This is my content
+            if len(parts) < 4:
+                emit('terminal_output', {'output': "Usage: wp post <Title_No_Spaces> <Content>"})
+            else:
+                emit('terminal_output', {'output': modules['wp'].create_post(parts[2], " ".join(parts[3:]))})
+            return
+
+    # --- 2. BLOGGER COMMANDS ---
+    if cmd_start == "blogger":
+        if not modules['blogger']:
+            emit('terminal_output', {'output': "❌ Error: Blogger module missing."})
+            return
+
+        # blogger setup <json_file> <blog_id>
         if parts[1] == "setup" and len(parts) == 4:
-            username = parts[2]
-            key = parts[3]
-            emit('terminal_output', {'output': kaggle_bot.setup_auth(username, key)})
-            return
-            
-        # Command: kaggle search <query>
-        if parts[1] == "search" and len(parts) > 2:
-            query = parts[2]
-            emit('terminal_output', {'output': kaggle_bot.search_data(query)})
+            emit('terminal_output', {'output': modules['blogger'].setup(parts[2], parts[3])})
             return
 
-        # Command: kaggle download <dataset>
-        if parts[1] == "download" and len(parts) > 2:
-            dataset = parts[2]
-            emit('terminal_output', {'output': "⏳ Downloading dataset... Please wait."})
-            emit('terminal_output', {'output': kaggle_bot.download_dataset(dataset)})
+        # blogger post <title> <content>
+        if parts[1] == "post":
+            emit('terminal_output', {'output': modules['blogger'].create_post(parts[2], " ".join(parts[3:]))})
             return
 
-    # --- 2. COLAB COMMANDS ---
-    if raw_command.lower() in ["connect colab", "colab setup"]:
-        if colab_available:
-            emit('terminal_output', {'output': "👇 Code for Colab:"})
-            emit('terminal_output', {'output': colab_link.get_setup_script()})
+    # --- 3. EXISTING MODULE COMMANDS (Git, HF, Colab, Health, Kaggle) ---
+    
+    # Kaggle
+    if cmd_start == "kaggle" and modules['kaggle']:
+        if parts[1] == "download": 
+            emit('terminal_output', {'output': modules['kaggle'].download_dataset(parts[2])})
+            return
+
+    # Colab
+    if raw_command.lower() == "connect colab" and modules['colab']:
+        emit('terminal_output', {'output': modules['colab'].get_setup_script()})
         return
 
-    # --- 3. HEALTH & GIT & HF (Existing) ---
-    if raw_command.lower() in ["health check", "system status"]:
-        if health_available: emit('terminal_output', {'output': sys_doc.diagnose()})
+    # Health
+    if raw_command.lower() == "system status" and modules['health']:
+        emit('terminal_output', {'output': modules['health'].diagnose()})
         return
 
-    if raw_command.startswith("hf ") and hf_available:
-        parts = raw_command.split()
-        if parts[1] == "login": emit('terminal_output', {'output': hf_brain.login_hf(parts[2])})
-        elif parts[1] == "download": emit('terminal_output', {'output': hf_brain.download_model(parts[2])})
+    # Git
+    if cmd_start == "git" and modules['git']:
+        emit('terminal_output', {'output': modules['git'].execute_git(parts[1:])})
         return
 
-    if raw_command.startswith("git ") and git_available:
-        emit('terminal_output', {'output': git_brain.execute_git(raw_command.split()[1:])})
-        return
-
-    # --- 4. FALLBACK SHELL ---
+    # Fallback System Command
     try:
         process = subprocess.Popen(raw_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir)
         out, err = process.communicate()
-        emit('terminal_output', {'output': out.decode('utf-8', errors='ignore') + err.decode('utf-8', errors='ignore')})
+        emit('terminal_output', {'output': out.decode() + err.decode()})
     except Exception as e:
         emit('terminal_output', {'output': str(e)})
 
 if __name__ == '__main__':
-    print("--- 🚀 AI Admin Panel: Kaggle Integrated ---")
+    print("--- 🚀 AI Admin Panel: CMS Integrated (WP + Blogger) ---")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-            
+    
