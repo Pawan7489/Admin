@@ -1,51 +1,48 @@
 # File: colab_bridge.py
-# Description: Generates connection scripts to link Google Colab with this Project
+# Description: Generates script to link Google Colab with Local Admin Panel via Google Drive
 
 class ColabConnector:
     def __init__(self):
-        self.project_name = "AI_Super_Genius"
+        # Folder name jo Google Drive par banega
+        self.project_folder = "AI_Admin_Panel_Data"
 
     def get_setup_script(self):
         """
-        Ye function ek Python script generate karta hai jo user ko 
-        Google Colab me paste karna hoga connection ke liye.
+        Ye function wo magic code generate karta hai jo aapko 
+        Google Colab me paste karna hai.
         """
         script = f"""
-# --- 🚀 STARTING BRIDGE TO LOCAL ADMIN PANEL ---
-# Is code ko Colab cell me run karein
+# ---------------------------------------------------------
+# 🚀 GOOGLE COLAB BRIDGE SCRIPT
+# Is code ko Colab ke cell me paste karke RUN karein (Play button)
+# ---------------------------------------------------------
 
 import os
 from google.colab import drive
 
-print("🔄 Connecting to Google Drive Bridge...")
+print("🔄 Connecting to Google Drive...")
 drive.mount('/content/drive')
 
-# Project Folder Setup
-PROJECT_PATH = '/content/drive/MyDrive/{self.project_name}'
+# 1. Project Folder Setup
+# Ye aapke Google Drive me '{self.project_folder}' naam ka folder dhoondega
+# Agar nahi mila, to naya bana dega.
+PROJECT_PATH = '/content/drive/MyDrive/{self.project_folder}'
 
 if not os.path.exists(PROJECT_PATH):
-    print(f"⚠️ Project folder nahi mila. Creating new: {{PROJECT_PATH}}")
+    print(f"⚠️ Folder nahi mila. Creating new: {{PROJECT_PATH}}")
     os.makedirs(PROJECT_PATH)
 else:
     print(f"✅ Project Found: {{PROJECT_PATH}}")
 
-# Navigate to Project
+# 2. Sync Logic
+# Ab Colab is folder ke andar kaam karega.
 os.chdir(PROJECT_PATH)
-print(f"📂 Current Working Directory: {{os.getcwd()}}")
+print(f"📂 Current Working Directory set to: {{os.getcwd()}}")
 
-# Install Dependencies
-print("⬇️ Installing Project Libraries...")
-# Agar requirements.txt hai to install karo, nahi to basic tools
-if os.path.exists('requirements.txt'):
-    os.system('pip install -r requirements.txt')
-else:
-    os.system('pip install flask flask-socketio huggingface_hub')
-
-print("\\n✅ BRIDGE ESTABLISHED! Aapka Colab ab Admin Panel files ke sath sync hai.")
-print("Ab aap yahan se 'python terminal_backend.py' run kar sakte hain.")
+print("\\n✅ BRIDGE SUCCESSFUL!")
+print("Ab aap jo file yahan save karenge, wo aapke Admin Panel me dikhegi.")
+print("(Make sure aapne apne PC par Google Drive for Desktop install kiya ho sync ke liye)")
+# ---------------------------------------------------------
 """
         return script
-
-    def get_status(self):
-        return "✅ Colab Bridge Module is Active. Type 'connect colab' to get the key."
-      
+        
