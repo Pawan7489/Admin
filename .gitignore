@@ -1,0 +1,24 @@
+# Ignore Python Cache
+__pycache__/
+*.pyc
+
+# Ignore Secret Configuration Files (Passwords)
+meta_config.json
+wp_config.json
+insta_config.json
+fb_config.json
+wa_config.json
+telegram_config.json
+storage_inventory.json
+engine_inventory.json
+hosting_inventory.json
+domain_inventory.json
+kaggle.json
+
+# Ignore Downloaded Data
+kaggle_downloads/
+downloaded_plugins/
+ai_models/
+
+# Ignore System Files
+.DS_Store
