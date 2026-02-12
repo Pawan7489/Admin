@@ -1,39 +1,111 @@
 # File: terminal_backend.py
-# Description: Admin Terminal with Basic Hinglish Intelligence (Rule-Based v1)
+# Description: Admin Terminal + App Store Logic (AI-PKG)
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import subprocess
 import os
+import json
 import platform
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'admin_secret_key_2026'
 socketio = SocketIO(app)
 
-# Current working directory tracker
+# Setup Environment
 current_dir = os.getcwd()
-os_type = platform.system()  # Windows ya Linux detect karega
+PLUGINS_DIR = os.path.join(current_dir, "installed_apps")
+if not os.path.exists(PLUGINS_DIR):
+    os.makedirs(PLUGINS_DIR)
 
-def translate_hinglish(command):
+# --- AI Logic Core ---
+def ai_package_manager(command):
     """
-    Basic Rule-Based Translator.
-    Future me yahan bada LLM model connect hoga.
-    Abhi ke liye hum common patterns pakdenge.
+    Handles App Store commands like 'list apps' or 'install <app_name>'
     """
-    cmd_lower = command.lower()
+    cmd_parts = command.split()
+    action = cmd_parts[0].lower()
+
+    # COMMAND: list apps
+    if action == "list" and "apps" in command:
+        try:
+            with open('store.json', 'r') as f:
+                data = json.load(f)
+            output = "\n--- 📦 AVAILABLE APPS IN AI STORE ---\n"
+            for app_id, details in data.items():
+                output += f"• {app_id} (v{details['version']}): {details['description']}\n"
+            return output
+        except FileNotFoundError:
+            return "Error: store.json not found. Database missing."
+
+    # COMMAND: install <app_name>
+    if action == "install":
+        if len(cmd_parts) < 2:
+            return "Error: App name bataiye. Usage: install <app_name>"
+        
+        app_name = cmd_parts[1]
+        
+        try:
+            with open('store.json', 'r') as f:
+                data = json.load(f)
+            
+            if app_name in data:
+                # Code fetch karo store se
+                app_code = data[app_name]['code']
+                
+                # File banao 'installed_apps' folder mein
+                file_path = os.path.join(PLUGINS_DIR, f"{app_name}.py")
+                with open(file_path, 'w') as app_file:
+                    app_file.write(app_code)
+                
+                return f"✅ SUCCESS: '{data[app_name]['name']}' installed successfully in /installed_apps/"
+            else:
+                return f"❌ Error: App '{app_name}' store mein nahi mila."
+                
+        except Exception as e:
+            return f"Error during installation: {str(e)}"
+
+    return None
+
+# --- Main Command Handler ---
+@socketio.on('command_input')
+def handle_command(raw_command):
+    global current_dir
+    raw_command = raw_command.strip()
     
-    # Logic 1: Folder Banane ka command
-    # User: "Ek naya folder banao Images naam ka"
-    if "folder" in cmd_lower and ("banao" in cmd_lower or "create" in cmd_lower):
-        parts = command.split()
-        # Simple logic: Last word ko folder name maan lete hain
-        folder_name = parts[-1] 
-        return f"mkdir {folder_name}"
+    if not raw_command:
+        return
 
-    # Logic 2: Files dekhne ka command
-    # User: "Yahan kya hai" ya "List dikhao"
-    if "kya hai" in cmd_lower or "list dikhao" in cmd_lower or "files dikhao" in cmd_lower:
+    # Check 1: App Store Command?
+    store_response = ai_package_manager(raw_command)
+    if store_response:
+        emit('terminal_output', {'output': store_response})
+        return
+
+    # Check 2: Run Installed App? (e.g., "run system-monitor")
+    if raw_command.startswith("run "):
+        app_name = raw_command.split()[1]
+        script_path = os.path.join(PLUGINS_DIR, f"{app_name}.py")
+        if os.path.exists(script_path):
+            raw_command = f"python {script_path}"
+        else:
+            emit('terminal_output', {'output': f"Error: App '{app_name}' installed nahi hai."})
+            return
+
+    # Check 3: System/Hinglish Commands (Existing Logic)
+    try:
+        process = subprocess.Popen(
+            raw_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir
+        )
+        stdout, stderr = process.communicate()
+        output = stdout.decode('utf-8', errors='ignore') + stderr.decode('utf-8', errors='ignore')
+        if not output: output = "Done."
+        emit('terminal_output', {'output': output})
+    except Exception as e:
+        emit('terminal_output', {'output': f"Error: {str(e)}"})
+
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
         if os_type == "Windows":
             return "dir"
         else:
