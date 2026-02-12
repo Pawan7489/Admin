@@ -1,3 +1,9 @@
 flask
 flask-socketio
-eventlet
+requests
+psutil
+python-whois
+huggingface_hub
+google-api-python-client
+google-auth
+urllib3
