@@ -1,5 +1,5 @@
 # File: terminal_backend.py
-# Description: Universal Admin Panel (WP + Blogger + All Previous Modules)
+# Description: Universal Admin Panel (All Modules + Cloudflare Tunnel)
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
@@ -8,30 +8,28 @@ import os
 import platform
 
 # --- MODULE AUTO-LOADER ---
-# Hum check karenge ki files maujood hain ya nahi
-
 modules = {}
 
-# 1. WordPress
+# 1. Cloudflare (NEW)
+try:
+    import cloudflare_manager
+    modules['cloud'] = cloudflare_manager.CloudflareTunnel()
+except ImportError:
+    modules['cloud'] = None
+
+# 2. WordPress
 try:
     import wordpress_manager
     modules['wp'] = wordpress_manager.WordPressBot()
 except ImportError:
     modules['wp'] = None
 
-# 2. Blogger
+# 3. Blogger
 try:
     import blogger_manager
     modules['blogger'] = blogger_manager.BloggerBot()
 except ImportError:
     modules['blogger'] = None
-
-# 3. Kaggle
-try:
-    import kaggle_manager
-    modules['kaggle'] = kaggle_manager.KaggleBot()
-except ImportError:
-    modules['kaggle'] = None
 
 # 4. Git
 try:
@@ -60,6 +58,13 @@ try:
     modules['colab'] = colab_bridge.ColabConnector()
 except ImportError:
     modules['colab'] = None
+    
+# 8. Kaggle
+try:
+    import kaggle_manager
+    modules['kaggle'] = kaggle_manager.KaggleBot()
+except ImportError:
+    modules['kaggle'] = None
 
 
 app = Flask(__name__)
@@ -81,62 +86,40 @@ def handle_command(raw_command):
     parts = raw_command.split()
     cmd_start = parts[0].lower()
 
-    # --- 1. WORDPRESS COMMANDS ---
-    if cmd_start == "wp":
-        if not modules['wp']:
-            emit('terminal_output', {'output': "❌ Error: WordPress module missing."})
+    # --- 1. CLOUDFLARE COMMANDS (NEW) ---
+    if cmd_start == "cloud":
+        if not modules['cloud']:
+            emit('terminal_output', {'output': "❌ Error: Cloudflare module missing."})
             return
         
-        # wp setup <url> <user> <pass>
-        if parts[1] == "setup" and len(parts) == 5:
-            emit('terminal_output', {'output': modules['wp'].setup(parts[2], parts[3], parts[4])})
-            return
-        
-        # wp post <title> <content>
-        if parts[1] == "post":
-            # Simple content parsing (Title needs quotes logic in future, simple split for now)
-            # Usage: wp post MyTitle This is my content
-            if len(parts) < 4:
-                emit('terminal_output', {'output': "Usage: wp post <Title_No_Spaces> <Content>"})
-            else:
-                emit('terminal_output', {'output': modules['wp'].create_post(parts[2], " ".join(parts[3:]))})
+        # Command: cloud public (Make site online)
+        if parts[1] == "public" or parts[1] == "start":
+            emit('terminal_output', {'output': "🚀 Initializing Cloudflare Tunnel... Wait logic..."})
+            emit('terminal_output', {'output': modules['cloud'].start_tunnel()})
             return
 
-    # --- 2. BLOGGER COMMANDS ---
-    if cmd_start == "blogger":
-        if not modules['blogger']:
-            emit('terminal_output', {'output': "❌ Error: Blogger module missing."})
+        # Command: cloud stop (Make site offline)
+        if parts[1] == "stop":
+            emit('terminal_output', {'output': modules['cloud'].stop_tunnel()})
             return
-
-        # blogger setup <json_file> <blog_id>
-        if parts[1] == "setup" and len(parts) == 4:
-            emit('terminal_output', {'output': modules['blogger'].setup(parts[2], parts[3])})
-            return
-
-        # blogger post <title> <content>
-        if parts[1] == "post":
-            emit('terminal_output', {'output': modules['blogger'].create_post(parts[2], " ".join(parts[3:]))})
-            return
-
-    # --- 3. EXISTING MODULE COMMANDS (Git, HF, Colab, Health, Kaggle) ---
+            
+    # --- 2. EXISTING COMMANDS (Quick Logic) ---
     
-    # Kaggle
-    if cmd_start == "kaggle" and modules['kaggle']:
-        if parts[1] == "download": 
-            emit('terminal_output', {'output': modules['kaggle'].download_dataset(parts[2])})
-            return
-
-    # Colab
-    if raw_command.lower() == "connect colab" and modules['colab']:
-        emit('terminal_output', {'output': modules['colab'].get_setup_script()})
+    # CMS (WP/Blogger)
+    if cmd_start == "wp" and modules['wp']:
+        if parts[1] == "post": emit('terminal_output', {'output': modules['wp'].create_post(parts[2], " ".join(parts[3:]))})
+        return
+    if cmd_start == "blogger" and modules['blogger']:
+        if parts[1] == "post": emit('terminal_output', {'output': modules['blogger'].create_post(parts[2], " ".join(parts[3:]))})
         return
 
-    # Health
+    # Tools (Health, Git, Colab)
     if raw_command.lower() == "system status" and modules['health']:
         emit('terminal_output', {'output': modules['health'].diagnose()})
         return
-
-    # Git
+    if raw_command.lower() == "connect colab" and modules['colab']:
+        emit('terminal_output', {'output': modules['colab'].get_setup_script()})
+        return
     if cmd_start == "git" and modules['git']:
         emit('terminal_output', {'output': modules['git'].execute_git(parts[1:])})
         return
@@ -150,6 +133,6 @@ def handle_command(raw_command):
         emit('terminal_output', {'output': str(e)})
 
 if __name__ == '__main__':
-    print("--- 🚀 AI Admin Panel: CMS Integrated (WP + Blogger) ---")
+    print("--- 🚀 AI Admin Panel: Cloudflare Integrated ---")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     
