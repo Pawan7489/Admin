@@ -1,228 +1,150 @@
-/* File 03: os_style.css */
-/* Description: Super Advanced UI/UX with Glassmorphism & Neon Effects */
+/* File 03: os_core.js */
+/* Description: Advanced SPA Logic, Terminal Execution, and WebSocket Connection */
 
-/* --- 1. BASE SETTINGS --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("A1 OS Core Initialized.");
 
-body {
-    background-color: #050505;
-    color: #ffffff;
-    overflow: hidden; /* OS mein scrolling nahi hoti, windows move hoti hain */
-    height: 100vh;
-    width: 100vw;
-}
+    // --- DOM Elements ---
+    const loginModal = document.getElementById('login-modal');
+    const appContainer = document.getElementById('app-container');
+    const loginBtn = document.getElementById('login-btn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    
+    const terminalScreen = document.getElementById('terminal-screen');
+    const cmdInput = document.getElementById('cmd-input');
+    const execBtn = document.getElementById('exec-btn');
+    const killSwitch = document.getElementById('kill-switch');
 
-/* --- 2. ANIMATED AI BACKGROUND --- */
-#ai-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% 50%, #0a192f 0%, #020c1b 100%);
-    z-index: -1;
-}
+    // --- WebSockets Setup (Connecting to Python Backend) ---
+    // Agar Socket.io load nahi hua hai (jaise local testing bina server ke), to error na aaye isliye try-catch
+    let socket;
+    try {
+        socket = io(); // Flask-SocketIO se connect karega
+        
+        socket.on('connect', () => {
+            printToTerminal("🟢 System Link Established. Connected to A1 Python Backend.", "text-neonGreen");
+        });
 
-/* Background Grid Effect */
-#ai-background::before {
-    content: '';
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    background-image: 
-        linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
-    background-size: 30px 30px;
-    animation: gridMove 20s linear infinite;
-}
+        // Backend se jo output aayega, wo terminal me dikhega
+        socket.on('terminal_output', (data) => {
+            printToTerminal(`[A1]: ${data.output}`, "text-gray-300");
+        });
 
-@keyframes gridMove {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-30px); }
-}
+    } catch (e) {
+        console.warn("Socket.io not found. Running in Frontend Simulation Mode.");
+    }
 
-/* --- 3. WIDGETS (Health & System Monitors) --- */
-.widget-panel {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 250px;
-}
+    // --- PHASE 1: LOGIN LOGIC ---
+    loginBtn.addEventListener('click', () => {
+        const user = usernameInput.value;
+        const pass = passwordInput.value;
 
-.widget {
-    /* Glassmorphism Effect */
-    background: rgba(16, 22, 34, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 255, 65, 0.2);
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    margin-bottom: 15px;
-}
+        // Front-end Gatekeeper (Asli security backend me hai, ye UI ke liye hai)
+        if(user === "admin" && pass !== "") {
+            loginBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> VERIFYING...";
+            loginBtn.classList.replace("bg-green-700", "bg-yellow-600");
+            
+            setTimeout(() => {
+                loginModal.classList.add("hidden");
+                appContainer.classList.remove("hidden");
+                printToTerminal("Welcome Admin. All systems nominal.", "text-neonGreen");
+                cmdInput.focus();
+            }, 1000); // 1 sec hacker style delay
+        } else {
+            loginBtn.innerHTML = "ACCESS DENIED";
+            loginBtn.classList.replace("bg-green-700", "bg-red-600");
+            setTimeout(() => {
+                loginBtn.innerHTML = "INITIALIZE CORE";
+                loginBtn.classList.replace("bg-red-600", "bg-green-700");
+            }, 2000);
+        }
+    });
 
-.widget h3 {
-    color: #00ff41;
-    font-size: 14px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
+    // Enter key support for login
+    passwordInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') loginBtn.click();
+    });
 
-.widget p {
-    font-size: 13px;
-    color: #a8b2d1;
-    margin-bottom: 5px;
-    font-family: 'Courier New', Courier, monospace;
-}
+    // --- PHASE 2: TERMINAL & COUNCIL OF EXPERTS LOGIC ---
+    function printToTerminal(text, colorClass = "text-white") {
+        const div = document.createElement('div');
+        div.className = `mb-1 ${colorClass}`;
+        div.innerText = text;
+        terminalScreen.appendChild(div);
+        terminalScreen.scrollTop = terminalScreen.scrollHeight; // Auto-scroll to bottom
+    }
 
-/* --- 4. DRAGGABLE OS WINDOWS --- */
-.os-window {
-    position: absolute;
-    top: 100px;
-    left: 100px;
-    width: 700px;
-    height: 450px;
-    background: rgba(13, 17, 23, 0.85);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 255, 65, 0.1);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    resize: both; /* Allow window resizing */
-}
+    function executeCommand() {
+        const command = cmdInput.value.trim();
+        if(!command) return;
 
-/* Window Header (Drag Handle) */
-.window-header {
-    background: rgba(22, 27, 34, 0.9);
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: grab; /* Shows it can be dragged */
-    user-select: none;
-}
+        // User input show karo
+        printToTerminal(`admin@A1-OS:~$ ${command}`, "text-blue-400 font-bold");
+        cmdInput.value = '';
 
-.window-header:active {
-    cursor: grabbing;
-}
+        // UI Simulation: Council of Experts Auditing
+        printToTerminal("⏳ Council of Experts Auditing Command...", "text-yellow-500 text-xs");
+        
+        setTimeout(() => {
+            // Audit Pass hone ke baad backend ko bhejo
+            printToTerminal("✅ Audit Passed. Executing...", "text-green-500 text-xs");
+            
+            if (socket) {
+                // Send to Python Backend
+                socket.emit('command_input', command);
+            } else {
+                // Fallback simulation if backend is off
+                setTimeout(() => {
+                    printToTerminal(`[Simulated Output]: Executed '${command}' successfully.`, "text-gray-300");
+                }, 500);
+            }
+        }, 800);
+    }
 
-.window-header span {
-    font-size: 14px;
-    color: #c9d1d9;
-    font-weight: 600;
-}
+    execBtn.addEventListener('click', executeCommand);
+    cmdInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') executeCommand();
+    });
 
-/* Mac-Style Control Buttons */
-.window-controls {
-    display: flex;
-    gap: 8px;
-}
+    // --- PHASE 3: RLHF (Human Feedback Logic) ---
+    const thumbsUp = document.querySelector('.fa-thumbs-up');
+    const thumbsDown = document.querySelector('.fa-thumbs-down');
 
-.control-btn {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: 0.2s;
-}
+    thumbsUp.addEventListener('click', () => {
+        printToTerminal("💡 RLHF: Positive feedback saved. AI will favor this logic path.", "text-neonGreen text-xs");
+    });
+    
+    thumbsDown.addEventListener('click', () => {
+        printToTerminal("⚠️ RLHF: Negative feedback saved. AI will avoid this logic path.", "text-red-400 text-xs");
+    });
 
-.close { background-color: #ff5f56; }
-.close:hover { background-color: #e0443e; box-shadow: 0 0 8px #ff5f56; }
+    // --- PHASE 4: EMERGENCY KILL SWITCH ---
+    killSwitch.addEventListener('click', () => {
+        printToTerminal("🚨 EMERGENCY OVERRIDE ACTIVATED! FREEZING ALL SYSTEMS...", "text-red-500 font-bold text-lg");
+        document.body.classList.add("bg-red-900");
+        document.body.style.transition = "background-color 0.5s ease";
+        
+        if (socket) socket.emit('command_input', 'SYSTEM_FREEZE_PROTOCOL_ACTIVATE');
+        
+        setTimeout(() => {
+            alert("SYSTEM FROZEN. NETWORK DISCONNECTED.");
+            location.reload(); // Reloads to login screen
+        }, 1500);
+    });
 
-.minimize { background-color: #ffbd2e; }
-.minimize:hover { background-color: #dea123; box-shadow: 0 0 8px #ffbd2e; }
+    // --- PHASE 5: BUTTON CLICK SIMULATIONS (Hot-Swap, Plugins, Apps) ---
+    // Har button par click hone par terminal me command bhejta hai
+    document.querySelectorAll('button').forEach(btn => {
+        if(btn.id === 'login-btn' || btn.id === 'exec-btn' || btn.id === 'kill-switch') return;
 
-.maximize { background-color: #27c93f; }
-.maximize:hover { background-color: #1aab29; box-shadow: 0 0 8px #27c93f; }
-
-/* --- 5. TERMINAL SPECIFIC STYLES --- */
-.window-content {
-    flex-grow: 1;
-    padding: 15px;
-    background-color: #000000;
-    color: #00ff41; /* Hacker Green */
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-#terminal-output {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    white-space: pre-wrap;
-}
-
-.input-line {
-    display: flex;
-    align-items: center;
-    margin-top: 5px;
-}
-
-.prompt {
-    color: #58a6ff; /* Hacker Blue */
-    margin-right: 10px;
-    font-weight: bold;
-}
-
-#terminal-input {
-    background: transparent;
-    border: none;
-    color: #ffffff;
-    font-family: 'Courier New', monospace;
-    font-size: 15px;
-    flex-grow: 1;
-    outline: none;
-    caret-color: #00ff41;
-}
-
-/* --- 6. BOTTOM DOCK (Mac-Style Taskbar) --- */
-#dock {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(16, 22, 34, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 10px 20px;
-    display: flex;
-    gap: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-}
-
-.dock-icon {
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 20px;
-    color: #c9d1d9;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.dock-icon:hover {
-    transform: scale(1.3) translateY(-10px);
-    background: rgba(0, 255, 65, 0.1);
-    color: #00ff41;
-    border-color: rgba(0, 255, 65, 0.5);
-    box-shadow: 0 5px 15px rgba(0, 255, 65, 0.3);
-}
+        btn.addEventListener('click', (e) => {
+            const btnText = e.target.innerText;
+            const cardTitle = e.target.closest('div, td').parentElement.querySelector('h3, td')?.innerText || "Module";
+            
+            cmdInput.value = `Intent: Execute [${btnText}] on [${cardTitle}]`;
+            executeCommand();
+        });
+    });
+});
+            
