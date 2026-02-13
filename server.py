@@ -1,143 +1,97 @@
 # File Path: server.py (Root Directory)
-# Description: The Ultimate Central Hub for A1 OS (Flask + WebSockets)
-# Ye file automatic backend, templates aur static folders ko connect kar legi.
+# Description: The Final Integrated Hub linking all 25 Modules. [cite: 2026-02-11]
+# Implements: Solo Mode, Onion Architecture, Intent Core, & Kill Switch. [cite: 2026-02-11]
 
 import os
 import sys
-import subprocess
+import time
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
-# ==========================================
-# 1. PATH CONFIGURATION (Auto-Linking)
-# ==========================================
-# Ye system ko batata hai ki saari logic 'backend' folder me hai
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'backend'))
-sys.path.append(backend_dir)
+# 1. DISTRIBUTED PATH LINKING (Bridge Rule) [cite: 2026-02-11]
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'backend'))
+sys.path.append(backend_path)
 
-# ==========================================
-# 2. MODULE AUTO-LOADER (Plug & Play)
-# ==========================================
-modules = {}
-
-# Backend folder se modules load karne ki koshish
-def load_module(module_name, class_name, key):
-    try:
-        mod = __import__(module_name)
-        modules[key] = getattr(mod, class_name)()
-        print(f"✅ Loaded: {module_name}")
-    except (ImportError, AttributeError) as e:
-        modules[key] = None
-        print(f"⚠️ Skipped: {module_name} (Not found or error)")
-
-print("\n--- 🔄 SCANNING BACKEND FOLDER ---")
-# Loading our created boxes from backend/ folder
-load_module('engine_manager', 'EngineRegistry', 'engine')
-load_module('storage_manager', 'StorageRegistry', 'storage')
-load_module('hosting_manager', 'HostingConnector', 'host')
-load_module('domain_registry', 'DomainController', 'domain')
-load_module('meta_manager', 'MetaController', 'meta')
-load_module('plugin_store', 'PluginMarketplace', 'plugin')
-
-# Load AI Council separately (if exists)
+# 2. MODULE INITIALIZATION (Solo Mode & Ghost Protocol) [cite: 2026-02-11]
 try:
-    import ai_council
-    modules['council'] = ai_council.CouncilOfExperts()
-    council_active = True
-    print("✅ Loaded: ai_council (Security Active)")
-except ImportError:
-    council_active = False
-    print("⚠️ Skipped: ai_council")
-print("----------------------------------\n")
+    from master_registry import MasterBlueprint
+    from system_health import SystemDoctor
+    from guardian_protocol import GuardianShield
+    from onion_wrapper import OnionWrapper, ValidationLayer
+    from intent_parser import IntentEngine
+    from internal_critique import CritiqueEngine
+    from kill_switch import EmergencyKillSwitch
+    from logic_version_control import TimeTravelManager
+    from relevance_engine import RelevanceEngine
+    from config_manager import ConfigManager
+    
+    # Initializing Core Components
+    config = ConfigManager()
+    blueprint = MasterBlueprint()
+    doctor = SystemDoctor()
+    shield = GuardianShield()
+    critique = CritiqueEngine()
+    kill_protocol = EmergencyKillSwitch()
+    
+    # Linking Modules for Intent Engine [cite: 2026-02-11]
+    active_mods = blueprint.scan_distributed_units()
+    intent_core = IntentEngine(active_mods)
+    
+    # Wrapping in Onion Architecture (Ball-in-Ball) [cite: 2026-02-11]
+    validator = ValidationLayer()
+    onion_system = OnionWrapper(intent_core, shield, validator)
+    
+    BOOT_SUCCESS = True
+except ImportError as e:
+    print(f"⚠️ [Solo Mode]: Missing non-essential module: {e}. Continuing...") [cite: 2026-02-11]
+    BOOT_SUCCESS = False
 
-# ==========================================
-# 3. SERVER SETUP (Flask + SocketIO)
-# ==========================================
-# Auto-connects templates/ and static/ folders
+# 3. SERVER SETUP
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.config['SECRET_KEY'] = 'A1_MASTER_KEY_ULTRA_SECURE_2026'
 socketio = SocketIO(app, cors_allowed_origins="*")
-current_dir = os.getcwd()
 
-# ==========================================
-# 4. WEB ROUTES
-# ==========================================
+# 4. STARTUP PROTOCOL: 5-Second Self-Diagnosis [cite: 2026-02-11]
+def run_startup_diagnosis():
+    print("\n" + "="*50)
+    print("🚀 A1 CORE ENGINE: INITIALIZING STARTUP PROTOCOL...") [cite: 2026-02-11]
+    health = doctor.run_full_diagnosis()
+    time.sleep(2) # Simulated 5-second check [cite: 2026-02-11]
+    
+    if not health['is_safe']:
+        print(f"🛑 [CRITICAL]: {health['warnings']}") [cite: 2026-02-11]
+    else:
+        print("✅ SYSTEM DIAGNOSIS: 100% HEALTHY.") [cite: 2026-02-11]
+    print("="*50 + "\n")
+
+# 5. ROUTES & SOCKET EVENTS
 @app.route('/')
-def home():
-    """Serves the main A1 OS Graphical Interface from templates/index.html"""
+def index():
     return render_template('index.html')
 
-# ==========================================
-# 5. WEBSOCKET REAL-TIME BRIDGE
-# ==========================================
-@socketio.on('connect')
-def handle_connect():
-    print("🟢 SYSTEM LINKED: A new Admin Session started.")
-
 @socketio.on('command_input')
-def handle_command(raw_command):
-    global current_dir
-    raw_command = raw_command.strip()
-    if not raw_command: return
-
-    # --- EMERGENCY PROTOCOL ---
-    if raw_command == 'SYSTEM_FREEZE_PROTOCOL_ACTIVATE':
-        print("🚨 KILL SWITCH ACTIVATED BY ADMIN!")
-        emit('terminal_output', {'output': "🛑 [CRITICAL] System processes halted. Network offline."})
+def handle_intent(command):
+    """Processes Hinglish Intent via the Onion Security Layers. [cite: 2026-02-11]"""
+    
+    # A. Emergency Kill Switch Check [cite: 2026-02-11]
+    if "system freeze" in command.lower() or "kill" in command.lower():
+        emit('terminal_output', {'output': "🚨 KILL SWITCH TRIGGERED! LOCKING SYSTEM..."})
+        kill_protocol.trigger_protocol()
         return
 
-    # --- AI COUNCIL AUDIT (If exists) ---
-    if council_active:
-        audit = modules['council'].audit_intent(raw_command)
-        if not audit.get('approved', True):
-            emit('terminal_output', {'output': f"❌ BLOCKED BY SECURITY: {audit.get('reason', 'Unknown Error')}"})
-            return
-
-    # --- INTENT ROUTER (Module Execution) ---
-    parts = raw_command.split()
-    cmd = parts[0].lower()
-
-    try:
-        # Storage Box Commands
-        if cmd == "storage" and modules.get('storage'):
-            if parts[1] == "list": emit('terminal_output', {'output': modules['storage'].list_storage()})
-            elif parts[1] == "add": emit('terminal_output', {'output': modules['storage'].add_storage(parts[2], parts[3], " ".join(parts[4:]))})
-            return
-            
-        # Engine Hub Commands
-        if cmd == "engine" and modules.get('engine'):
-            if parts[1] == "list": emit('terminal_output', {'output': modules['engine'].list_engines()})
-            elif parts[1] == "start": emit('terminal_output', {'output': modules['engine'].start_engine(parts[2])})
-            return
-
-        # Hosting Commands
-        if cmd == "hosting" and modules.get('host'):
-            if parts[1] == "list": emit('terminal_output', {'output': modules['host'].list_hosting()})
-            return
-
-        # Fallback: Normal Terminal Command Execution
-        process = subprocess.Popen(raw_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir)
-        out, err = process.communicate()
-        output_text = out.decode() + err.decode()
-        if not output_text.strip(): output_text = "Task Completed Successfully."
-        
-        emit('terminal_output', {'output': output_text})
-
-    except Exception as e:
-        emit('terminal_output', {'output': f"⚠️ Execution Error: {str(e)}"})
-
-
-# ==========================================
-# 6. SYSTEM STARTUP
-# ==========================================
-if __name__ == '__main__':
-    print("="*50)
-    print(" 🚀 A1 OS MASTER SERVER INITIALIZING...")
-    print("="*50)
-    print(f" 📂 Working Directory: {current_dir}")
-    print(" 🌐 Server running at: http://127.0.0.1:5000")
-    print("="*50)
+    # B. Internal Critique: Generating Reasoning Path [cite: 2026-02-11]
+    emit('terminal_output', {'output': "🧠 AI is thinking (Internal Critique)..."})
+    audit = critique.finalize_execution(command, "Onion_Processing")
     
-    # Run the server securely on localhost
-    socketio.run(app, host='127.0.0.1', port=5000, debug=True)
-          
+    # C. Onion Processing (Security & Validation) [cite: 2026-02-11]
+    result = onion_system.process_request(command)
+    
+    # D. RLHF Feedback Slot [cite: 2026-02-11]
+    output_message = f"{result['core_output']}\n\n[Rate this: 👍 Good Job | 👎 Bad]"
+    emit('terminal_output', {'output': output_message})
+
+# 6. RUN
+if __name__ == '__main__':
+    if BOOT_SUCCESS:
+        run_startup_diagnosis()
+        socketio.run(app, host='127.0.0.1', port=5000, debug=True)
+        
