@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A1 OS - Super Genius Admin</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="os_style.css">
+</head>
+<body>
+    <div id="ai-background"></div>
+
+    <div id="desktop">
+        
+        <div class="widget-panel">
+            <div class="widget" id="health-widget">
+                <h3><i class="fas fa-heartbeat"></i> AI Core Health</h3>
+                <p id="cpu-status">CPU: Scanning...</p>
+                <p id="ram-status">RAM: Scanning...</p>
+                <p id="net-status">Status: 🟢 ONLINE</p>
+            </div>
+        </div>
+
+        <div class="os-window" id="terminal-window">
+            <div class="window-header" id="terminal-header">
+                <span><i class="fas fa-terminal"></i> Master Terminal</span>
+                <div class="window-controls">
+                    <span class="control-btn minimize"></span>
+                    <span class="control-btn maximize"></span>
+                    <span class="control-btn close"></span>
+                </div>
+            </div>
+            <div class="window-content">
+                <div id="terminal-output">
+                    <div>[System] Welcome to A1 OS Control Panel.</div>
+                    <div>[System] Type your command or use the visual dock...</div>
+                </div>
+                <div class="input-line">
+                    <span class="prompt">admin@A1-OS:~$</span>
+                    <input type="text" id="terminal-input" autocomplete="off" autofocus>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="dock">
+        <div class="dock-icon" data-target="terminal-window" title="Master Terminal">
+            <i class="fas fa-terminal"></i>
+        </div>
+        <div class="dock-icon" data-target="server-window" title="Cloud & Hosting">
+            <i class="fas fa-server"></i>
+        </div>
+        <div class="dock-icon" data-target="social-window" title="Meta Trinity (FB/Insta/WA)">
+            <i class="fas fa-hashtag"></i>
+        </div>
+        <div class="dock-icon" data-target="store-window" title="Plugin Store">
+            <i class="fas fa-store"></i>
+        </div>
+        <div class="dock-icon" data-target="settings-window" title="Core Settings">
+            <i class="fas fa-cog"></i>
+        </div>
+    </div>
+
+    <script src="os_core.js"></script>
+</body>
+</html>
