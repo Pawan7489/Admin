@@ -1,0 +1,21 @@
+{
+    "SYSTEM_METADATA": {
+        "PROJECT_NAME": "A1 CORE ENGINE",
+        "VERSION": "1.0.0-PROTOTYPE",
+        "ADMIN": "Bansal College Bhopal Node"
+    },
+    "SKELETON_KEYS": {
+        "VOICE_API_URL": "",
+        "IMAGE_MODEL_PATH": "",
+        "LLM_MODEL_DIR": "ai_models/",
+        "CLOUD_STORAGE_BRIDGE": "",
+        "EXTERNAL_DRIVE_D": "D:/A1_OS_DATA/",
+        "GPU_TEMP_THRESHOLD": 85
+    },
+    "ACTIVE_MODULES": {
+        "WEB_INJECTOR": true,
+        "DEV_CONTROLS": true,
+        "INTENT_ENGINE": true,
+        "GUARDIAN_SHIELD": true
+    }
+}
