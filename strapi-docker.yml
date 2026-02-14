@@ -1,0 +1,33 @@
+# File: strapi-docker.yml
+# Strategy: Musk Rule - High performance, zero hosting cost.
+# Deployment: Oracle Cloud (Bhopal Server Context).
+
+services:
+  strapi:
+    image: strapi/strapi:latest
+    container_name: a1-strapi-admin
+    restart: always
+    environment:
+      - DATABASE_CLIENT=postgres
+      - DATABASE_HOST=postgres-db
+      - DATABASE_NAME=strapi
+      - DATABASE_USERNAME=strapi
+      - DATABASE_PASSWORD=your_secure_password
+      - NODE_ENV=production
+    ports:
+      - "1337:1337"
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=strapi
+      - POSTGRES_USER=strapi
+      - POSTGRES_PASSWORD=your_secure_password
+    volumes:
+      - strapi_data:/var/lib/postgresql/data
+
+volumes:
+  strapi_data:
+  
