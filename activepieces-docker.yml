@@ -1,0 +1,35 @@
+# File: activepieces-docker.yml
+# Purpose: Self-hosting Activepieces on Oracle Cloud for $0.
+# Strategy: Musk Style - High output with minimum CPU usage.
+
+services:
+  activepieces:
+    image: activepieces/activepieces:latest
+    container_name: activepieces
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - AP_ENGINE_EXECUTOR_MODE=SANDBOXED # Security Layer [cite: 2026-02-11]
+      - AP_ENVIRONMENT=PRODUCTION
+      - AP_FRONTEND_URL=http://your-oracle-ip:8080
+      - AP_POSTGRES_DATABASE=activepieces
+      - AP_POSTGRES_HOST=postgres
+      - AP_POSTGRES_USERNAME=postgres
+      - AP_POSTGRES_PASSWORD=your_secure_password
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_DB=activepieces
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_secure_password
+    volumes:
+      - activepieces_db:/var/lib/postgresql/data
+
+volumes:
+  activepieces_db:
+  
