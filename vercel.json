@@ -1,4 +1,17 @@
 {
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.py"
+        }
+    ]
+}
+
+
+
+
+
+{
     "version": 2,
     "builds": [
         {
