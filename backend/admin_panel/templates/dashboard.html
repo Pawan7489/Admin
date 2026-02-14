@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A1 OS | God Mode</title>
+    <style>
+        body { background-color: #0d1117; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { border-bottom: 2px solid #00ff41; padding-bottom: 10px; }
+        .card { border: 1px solid #30363d; background: #161b22; padding: 15px; margin: 10px 0; border-radius: 6px; }
+        .status { color: #00ff41; font-weight: bold; }
+        .offline { color: #ff0000; }
+        .stats { font-size: 20px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 A1 OS MASTER CONTROL</h1>
+    <div class="stats">
+        Total AI Engines: {{ count }} | System Status: <span class="status">ONLINE</span>
+    </div>
+
+    <h2>Active Fleet Registry</h2>
+    {% for engine in engines %}
+    <div class="card">
+        <h3>{{ engine.name }}</h3>
+        <p>Type: {{ engine.type }}</p>
+        <p>Status: <span class="status">● Active</span></p>
+    </div>
+    {% endfor %}
+
+    {% if engines|length == 0 %}
+    <p>No active engines found. Wake up the Swarm!</p>
+    {% endif %}
+</body>
+</html>
