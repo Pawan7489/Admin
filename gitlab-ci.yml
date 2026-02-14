@@ -1,0 +1,31 @@
+# File: .gitlab-ci.yml
+# Purpose: Backup Pipeline when GitHub Actions quota is exhausted.
+# Strategy: "The Shadow Factory" - Builds code silently in background.
+
+image: python:3.9
+
+stages:
+  - test
+  - deploy_backup
+
+# 1. Testing Stage (Code fatne se pehle check karo)
+run_tests:
+  stage: test
+  script:
+    - echo "🛠️ [GitLab]: Starting Backup Test Sequence..."
+    - pip install -r requirements.txt
+    - python -m unittest discover backend/tests
+    - echo "✅ [GitLab]: All Tests Passed."
+
+# 2. Deployment Stage (Agar GitHub fail ho jaye toh Koyeb par daal do)
+deploy_to_koyeb:
+  stage: deploy_backup
+  script:
+    - echo "🚀 [GitLab]: Deploying to Koyeb (Backup Server)..."
+    - apt-get update && apt-get install -y curl
+    # Koyeb API ko hit karke naya code live kar do
+    - curl -X POST https://app.koyeb.com/v1/services/$KOYEB_SERVICE_ID/redeploy \
+      -H "Authorization: Bearer $KOYEB_TOKEN"
+  only:
+    - main  # Sirf tab chalega jab main code update hoga
+    
