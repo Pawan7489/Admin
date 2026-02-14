@@ -1,0 +1,26 @@
+# File: supertokens-docker.yml
+# Purpose: Self-hosted Auth for Infinite Scaling.
+# Strategy: "Zuckerberg Rule" - Scale for millions with zero licensing cost.
+
+services:
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql
+    ports:
+      - "3567:3567"
+    environment:
+      - POSTGRESQL_CONNECTION_URI=postgresql://supertokens_user:password@db:5432/supertokens
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=supertokens_user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=supertokens
+    volumes:
+      - st_db_data:/var/lib/postgresql/data
+
+volumes:
+  st_db_data:
+  
