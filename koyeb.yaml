@@ -1,0 +1,20 @@
+type: web
+name: a1-os-backup-node
+runtime: python
+buildCommand: pip install -r requirements.txt
+runCommand: python run_god_mode.py
+env:
+  MONGO_URI: "mongodb+srv://..."  # Database same rahega (MongoDB Atlas)
+  HF_TOKEN: "hf_..."
+ports:
+  - port: 8000
+    path: /
+health-checks:
+  - port: 8000
+    path: /health
+    interval: 300
+    timeout: 5
+    restarts: 3
+regions:
+  - fra  # Frankfurt (Free tier region usually)
+instance_type: free  # Explicitly using the free instance
