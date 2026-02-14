@@ -14,7 +14,7 @@ class StealthProtocol:
         self.decoy_names = ["Workstation-772", "HP-Print-Jet", "Generic-PC", "Android-Device"]
 
     def activate_ghost_mode(self):
-        """System ko network par 'Invisible' banata hai.""" [cite: 2026-02-11]
+        """System ko network par 'Invisible' banata hai.""" 
         print("👤 [Stealth]: Activating Ghost Mode Engine...")
         self.is_ghost_mode = True
         
